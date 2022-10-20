@@ -8,6 +8,11 @@ import dudePng from "./assets/dude.png";
 let platforms: Phaser.Physics.Arcade.StaticGroup;
 let player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
 let cursors: Phaser.Types.Input.Keyboard.CursorKeys;
+let stars: Phaser.Physics.Arcade.Group;
+
+const collectStar: ArcadePhysicsCallback = (player, star) => {
+  star.disableBody(true, true);
+};
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -70,6 +75,17 @@ const game = new Phaser.Game({
       this.physics.add.collider(player, platforms);
 
       cursors = this.input.keyboard.createCursorKeys();
+
+      stars = this.physics.add.group({
+        key: "star",
+        repeat: 11,
+        setXY: { x: 12, y: 0, stepX: 70 },
+      });
+      stars.children.each((child) => {
+        child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
+      });
+      this.physics.add.collider(stars, platforms);
+      this.physics.add.overlap(player, stars, collectStar, undefined, this);
     },
     update: function () {
       if (cursors.left.isDown) {
