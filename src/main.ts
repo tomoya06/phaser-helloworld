@@ -9,10 +9,42 @@ let platforms: Phaser.Physics.Arcade.StaticGroup;
 let player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
 let cursors: Phaser.Types.Input.Keyboard.CursorKeys;
 let stars: Phaser.Physics.Arcade.Group;
+let bombs: Phaser.Physics.Arcade.Group;
+let scoreText: Phaser.GameObjects.Text;
+let score = 0;
+let gameOver = false;
 
-const collectStar: ArcadePhysicsCallback = (player, star) => {
+function collectStar(player, star) {
   star.disableBody(true, true);
-};
+
+  score += 10;
+  scoreText.setText(`score: ${score}`);
+  if (stars.countActive(true) === 0) {
+    stars.children.iterate(function (child) {
+      child.enableBody(true, child.x, 0, true, true);
+    });
+
+    var x =
+      player.x < 400
+        ? Phaser.Math.Between(400, 800)
+        : Phaser.Math.Between(0, 400);
+
+    var bomb = bombs.create(x, 16, "bomb");
+    bomb.setBounce(1);
+    bomb.setCollideWorldBounds(true);
+    bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
+  }
+}
+
+function hitBomb(player, bomb) {
+  this.physics.pause();
+
+  player.setTint(0xff0000);
+
+  player.anims.play("turn");
+
+  gameOver = true;
+}
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -86,13 +118,22 @@ const game = new Phaser.Game({
       });
       this.physics.add.collider(stars, platforms);
       this.physics.add.overlap(player, stars, collectStar, undefined, this);
+
+      bombs = this.physics.add.group();
+      this.physics.add.collider(bombs, platforms);
+      this.physics.add.collider(player, bombs, hitBomb, undefined, this);
+
+      scoreText = this.add.text(16, 16, "score: 0", {
+        fontSize: "32px",
+        color: "#fff",
+      });
     },
     update: function () {
       if (cursors.left.isDown) {
-        player.setVelocityX(-100);
+        player.setVelocityX(-400);
         player.anims.play("left", true);
       } else if (cursors.right.isDown) {
-        player.setVelocityX(100);
+        player.setVelocityX(400);
         player.anims.play("right", true);
       } else {
         player.setVelocityX(0);
